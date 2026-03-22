@@ -5,40 +5,49 @@ import plotly.graph_objects as go
 import time
 
 # =========================
-# PAGE CONFIG
+# CONFIG
 # =========================
-st.set_page_config(
-    page_title="Customer Churn Dashboard",
-    page_icon="📊",
-    layout="wide"
-)
+st.set_page_config(page_title="Churn Intelligence", layout="wide")
 
 # =========================
-# STYLE (PRO UI)
+# CUSTOM CSS (PRO UI)
 # =========================
 st.markdown("""
 <style>
 body {
     background-color: #0e1117;
 }
-.block-container {
-    padding: 2rem;
+
+/* Card */
+.card {
+    background: linear-gradient(145deg, #1c1f26, #111);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
 }
-div[data-testid="stMetric"] {
-    background-color: #1c1f26;
-    padding: 15px;
-    border-radius: 12px;
+
+/* Title */
+h1, h2, h3 {
+    color: white;
 }
+
+/* Button */
 .stButton>button {
-    background-color: #f77fbe;
+    background: linear-gradient(90deg, #f77fbe, #ff4ecd);
     color: white;
     border-radius: 10px;
+    height: 3em;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: #111;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# LOAD MODEL
+# LOAD
 # =========================
 model = pickle.load(open("model.pkl", "rb"))
 columns = pickle.load(open("columns.pkl", "rb"))
@@ -48,22 +57,20 @@ columns = pickle.load(open("columns.pkl", "rb"))
 # =========================
 st.sidebar.title("⚙️ Customer Input")
 
-tenure = st.sidebar.slider("Months with company", 0, 72, 12)
+tenure = st.sidebar.slider("Months", 0, 72, 12)
 monthly = st.sidebar.slider("Monthly Charges", 0, 200, 50)
 
 st.sidebar.markdown("---")
-st.sidebar.info("📌 ปรับค่าด้านบน แล้วดูผลลัพธ์")
+st.sidebar.caption("Adjust parameters to simulate customer behavior")
 
 # =========================
 # HEADER
 # =========================
-st.title("📊 Customer Churn Intelligence Dashboard")
-st.markdown("AI วิเคราะห์ความเสี่ยงการยกเลิกของลูกค้าแบบเรียลไทม์")
-
-st.divider()
+st.title("📊 Customer Churn Intelligence")
+st.caption("AI-powered risk analysis dashboard")
 
 # =========================
-# PREP INPUT
+# INPUT PREP
 # =========================
 input_dict = {col: 0 for col in columns}
 
@@ -76,30 +83,28 @@ if "MonthlyCharges" in input_dict:
 input_df = pd.DataFrame([input_dict])
 
 # =========================
-# LOADING EFFECT
+# LOADING
 # =========================
-with st.spinner("🔄 AI กำลังวิเคราะห์..."):
+with st.spinner("Analyzing customer behavior..."):
     time.sleep(1)
 
 prediction = model.predict(input_df)[0]
 proba = model.predict_proba(input_df)[0][1]
 
 # =========================
-# METRIC CARDS
+# KPI CARDS
 # =========================
 col1, col2, col3 = st.columns(3)
 
-col1.metric("📅 Tenure", f"{tenure} เดือน")
-col2.metric("💰 Monthly Charges", f"{monthly} บาท")
-col3.metric("⚠️ Risk", f"{proba:.2%}")
+col1.markdown(f"<div class='card'>📅 Tenure<br><h2>{tenure} เดือน</h2></div>", unsafe_allow_html=True)
+col2.markdown(f"<div class='card'>💰 Charges<br><h2>{monthly} บาท</h2></div>", unsafe_allow_html=True)
+col3.markdown(f"<div class='card'>⚠️ Risk<br><h2>{proba:.2%}</h2></div>", unsafe_allow_html=True)
 
 st.divider()
 
 # =========================
-# GAUGE CHART (WOW)
+# GAUGE
 # =========================
-st.subheader("🎯 Churn Risk Gauge")
-
 fig = go.Figure(go.Indicator(
     mode="gauge+number",
     value=proba * 100,
@@ -114,48 +119,41 @@ fig = go.Figure(go.Indicator(
         ]
     }
 ))
-
 st.plotly_chart(fig, use_container_width=True)
 
 # =========================
-# RESULT MESSAGE
+# RESULT
 # =========================
-st.subheader("📌 Prediction Result")
+st.subheader("📌 Prediction")
 
 if prediction == 1:
-    st.error("⚠️ High Risk: ลูกค้ามีแนวโน้มจะยกเลิก")
+    st.error("High Risk: Customer likely to churn")
 else:
-    st.success("✅ Low Risk: ลูกค้าน่าจะอยู่ต่อ")
+    st.success("Low Risk: Customer likely to stay")
 
 # =========================
-# SMART RECOMMENDATION ⭐
+# SMART INSIGHT ⭐
 # =========================
-st.subheader("💡 Recommendation")
+st.subheader("🧠 AI Insight")
 
 if proba > 0.7:
-    st.warning("ควรให้โปรโมชั่นหรือโทรติดต่อลูกค้าโดยด่วน")
+    st.warning("Immediate retention action recommended (discount / call)")
 elif proba > 0.4:
-    st.info("ควรติดตามพฤติกรรมลูกค้าเพิ่มเติม")
+    st.info("Monitor customer behavior closely")
 else:
-    st.success("ลูกค้ากลุ่มนี้มีความเสี่ยงต่ำ")
-
-# =========================
-# PROGRESS BAR
-# =========================
-st.subheader("🔥 Risk Level")
-st.progress(float(proba))
+    st.success("Customer is stable")
 
 # =========================
 # FEATURE IMPORTANCE
 # =========================
-st.subheader("📊 Top Influencing Features")
+st.subheader("📊 Key Drivers")
 
 importances = model.feature_importances_
 
 feat_df = pd.DataFrame({
     "Feature": columns,
     "Importance": importances
-}).sort_values(by="Importance", ascending=False).head(10)
+}).sort_values(by="Importance", ascending=False).head(8)
 
 st.bar_chart(feat_df.set_index("Feature"))
 
@@ -163,4 +161,4 @@ st.bar_chart(feat_df.set_index("Feature"))
 # FOOTER
 # =========================
 st.divider()
-st.caption("⚠️ This AI model is for educational purposes only.")
+st.caption("© 2026 Churn Intelligence System | Educational Use Only")
