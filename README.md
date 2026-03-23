@@ -40,4 +40,5 @@
 ## How to Run
 
 ```bash
-streamlit run app.py
+
+https://ml-deployment-project-vhp3lmnchszyhp7fmefues.streamlit.app/
